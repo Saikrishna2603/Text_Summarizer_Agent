@@ -8,10 +8,18 @@ from langchain_openai import AzureChatOpenAI
 class state(TypedDict):
     parts:list[str]
     action:Literal["add_part", "summarize_all"]
-    new_parts:Optional[str]
+    new_part:Optional[str]
     style:Optional[str]
     sentence:Optional[str]
     summary:Optional[str]
+
+    #Handeling Large Inputs
+    chunk_size:Optional[str]
+    chunk_overlap:Optional[str]
+    map_sentences:Optional[str]
+    reduce_sentences:Optional[str]
+
+#Load .env file
 load_dotenv()
 
 # ---- Azure OpenAI config pulled from env ----
@@ -24,7 +32,16 @@ llm = AzureChatOpenAI(
 )
 
 #This is for validating the prompt
-sum_prompt = ChatPromptTemplate.from_messages([
-    ("system", "You are a concise assistant that writes faithful, neutral summaries."),
-    ("human", "Summarize the following combined text in {style} style, ~{sentence} sentence.\n\nTEXT:\n{all_text}")
+
+MAP_PROMPT = ChatPromptTemplate.from_messages([
+    ("system", "You are a faithful, neutral note-taker. Summarize this chunk accurately."),
+    ("human",
+     "Write a {style} summary of the CHUNK in about {sentences} sentences.\n\nCHUNK:\n{chunk}")
+])
+
+REDUCE_PROMPT = ChatPromptTemplate.from_messages([
+    ("system", "You are a concise synthesizer that merges multiple summaries into one cohesive whole."),
+    ("human",
+     "Combine the following bullet summaries into a single {style} summary of ~{sentences} sentences.\n\n"
+     "BULLET SUMMARIES:\n{bullets}")
 ])
